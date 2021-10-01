@@ -7,7 +7,7 @@ class Chain(Enum):
     xDai = 64
     mainnet = 1
 
-@router.post('/tokens/{chain}/{address}')
+@router.get('/tokens/{chain}/{address}')
 async def get_tokens(chain: Chain, address: str):
 
     res = "fesjb"
