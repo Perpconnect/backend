@@ -46,14 +46,12 @@ jobs:
       - name: Build and Run Test
         run: . venv/bin/activate
 
-      - name: Create Zipfile archive of Dependencies
+      - name: Create archive of dependencies
         run: |
           cd ./venv/lib/python3.7/site-packages
-          zip -r9 ../../../../../api.zip .
-
-      - name: Add App to Zipfile
-        run: cd .. && cd ./backend && zip -g ../api.zip -r . && mv ../api.zip .
-
+          zip -r9 ../../../../api.zip .
+      - name: Add API files to Zip file
+        run: cd ./api && zip -g ../api.zip -r .
       - name: Upload zip file artifact
         uses: actions/upload-artifact@v2
         with:
