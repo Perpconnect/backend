@@ -3,7 +3,6 @@ from mangum import Mangum
 from api.router import *
 from fastapi.middleware.cors import CORSMiddleware
 
-
 app = FastAPI(title="Perp connect - partial backend", openapi_prefix="/main")
 
 app.add_middleware(

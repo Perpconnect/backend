@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class TokenBalance(BaseModel):
     balance: str
     contractAddress: str
