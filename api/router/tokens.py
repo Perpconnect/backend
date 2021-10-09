@@ -1,19 +1,32 @@
 from fastapi import APIRouter, HTTPException
-from enum import Enum
+import requests
+
+from schemas.TokenBalance import TokenBalance
 
 router = APIRouter()
 
-class Chain(Enum):
-    xDai = 64
-    mainnet = 1
-
 @router.get('/tokens/{chain}/{address}')
-async def get_tokens(chain: Chain, address: str):
-
-    res = "fesjb"
+async def tokens(chain: int, address: str) -> [TokenBalance]:
 
     # Error response.
-    if chain == Chain.mainnet: raise HTTPException(status_code=505, detail="Ethereum mainnet is not currently supported.")
+    if chain == 1: raise HTTPException(status_code=505, detail="Ethereum mainnet is not currently supported.")
 
-    # Return User Data.
-    return address
+    url = "https://blockscout.com/xdai/mainnet/api?module=account&action=tokenlist&address={}".format(address)
+    headers = {'Content-Type': 'application/json'}
+    response = requests.post(url, headers=headers)
+
+    all_tokens = []
+
+    for token in response.json()['result']:
+        if token['type'] != 'ERC-20': continue
+        balance = TokenBalance(
+            balance = token['balance'],
+            contractAddress = token['contractAddress'],
+            decimals = token['decimals'],
+            name = token['name'],
+            symbol = token['symbol'],
+            type = token['type'])
+
+        all_tokens.append(balance)
+
+    return all_tokens
