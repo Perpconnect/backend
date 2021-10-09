@@ -5,27 +5,35 @@ from schemas.TokenBalance import TokenBalance
 
 router = APIRouter()
 
-@router.get('/tokens/{chain}/{address}')
+
+@router.get("/tokens/{chain}/{address}")
 async def tokens(chain: int, address: str) -> [TokenBalance]:
 
     # Error response.
-    if chain == 1: raise HTTPException(status_code=505, detail="Ethereum mainnet is not currently supported.")
+    if chain == 1:
+        raise HTTPException(
+            status_code=505, detail="Ethereum mainnet is not currently supported."
+        )
 
-    url = "https://blockscout.com/xdai/mainnet/api?module=account&action=tokenlist&address={}".format(address)
-    headers = {'Content-Type': 'application/json'}
+    url = "https://blockscout.com/xdai/mainnet/api?module=account&action=tokenlist&address={}".format(
+        address
+    )
+    headers = {"Content-Type": "application/json"}
     response = requests.post(url, headers=headers)
 
     all_tokens = []
 
-    for token in response.json()['result']:
-        if token['type'] != 'ERC-20': continue
+    for token in response.json()["result"]:
+        if token["type"] != "ERC-20":
+            continue
         balance = TokenBalance(
-            balance = token['balance'],
-            contractAddress = token['contractAddress'],
-            decimals = token['decimals'],
-            name = token['name'],
-            symbol = token['symbol'],
-            type = token['type'])
+            balance=token["balance"],
+            contractAddress=token["contractAddress"],
+            decimals=token["decimals"],
+            name=token["name"],
+            symbol=token["symbol"],
+            type=token["type"],
+        )
 
         all_tokens.append(balance)
 

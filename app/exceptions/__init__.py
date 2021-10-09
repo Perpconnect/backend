@@ -1,4 +1,1 @@
-__all__ = [
-    "auth",
-    "generic"
-]
+__all__ = ["auth", "generic"]
