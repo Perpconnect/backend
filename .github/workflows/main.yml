@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ tokenBalance ]
+    branches: [ main ]
 
 
 jobs:
@@ -62,7 +62,7 @@ jobs:
   continuous-deployment:
     runs-on: ubuntu-latest
     needs: [continuous-integration]
-    if: github.ref == 'refs/heads/tokenBalance'
+    if: github.ref == 'refs/heads/main'
     steps:
 
       - name: Install AWS CLI
