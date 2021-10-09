@@ -52,7 +52,7 @@ jobs:
           zip -r9 ../../../../../api.zip .
 
       - name: Add App to Zipfile
-        run: cd .. && cd ./backend && zip -g ../api.zip -r .
+        run: cd .. && cd ./backend && zip -g ../api.zip -r . && mv ../api.zip .
 
       - name: Upload zip file artifact
         uses: actions/upload-artifact@v2
