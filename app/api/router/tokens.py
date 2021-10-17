@@ -23,21 +23,6 @@ async def tokens(chain: int, address: str) -> [TokenBalance]:
 
     all_tokens = []
 
-    if response.json()["result"] == []:
-        all_tokens.append(
-            TokenBalance(
-                balance="0",
-                contractAddress="0xfc8b2690f66b46fec8b3ceeb95ff4ac35a0054bc",
-                decimals="18",
-                name="Dai Token on xDai",
-                symbol="DAI",
-                type="ERC-20",
-                logo_url="https://cryptoicons.org/api/icon/DAI/200",
-                usd="0.0",
-            )
-        )
-        return all_tokens
-
     for token in response.json()["result"]:
         if token["type"] != "ERC-20":
             continue
@@ -54,4 +39,17 @@ async def tokens(chain: int, address: str) -> [TokenBalance]:
 
         all_tokens.append(balance)
 
+    if all_tokens == []:
+        all_tokens.append(
+            TokenBalance(
+                balance="0",
+                contractAddress="0xfc8b2690f66b46fec8b3ceeb95ff4ac35a0054bc",
+                decimals="18",
+                name="Dai Token on xDai",
+                symbol="DAI",
+                type="ERC-20",
+                logo_url="https://cryptoicons.org/api/icon/DAI/200",
+                usd="0.0",
+            )
+        )
     return all_tokens
