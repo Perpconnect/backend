@@ -9,3 +9,4 @@ class TokenBalance(BaseModel):
     symbol: str
     type: str
     logo_url: str
+    usd: str
