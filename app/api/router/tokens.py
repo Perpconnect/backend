@@ -33,6 +33,7 @@ async def tokens(chain: int, address: str) -> [TokenBalance]:
             name=token["name"],
             symbol=token["symbol"],
             type=token["type"],
+            logo_url="https://cryptoicons.org/api/icon/{}/200".format(token["symbol"]),
         )
 
         all_tokens.append(balance)

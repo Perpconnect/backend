@@ -8,3 +8,4 @@ class TokenBalance(BaseModel):
     name: str
     symbol: str
     type: str
+    logo_url: str
