@@ -33,7 +33,9 @@ async def tokens(chain: int, address: str) -> [TokenBalance]:
             name=token["name"],
             symbol=token["symbol"],
             type=token["type"],
-            logo_url="https://cryptoicons.org/api/icon/{}/200".format(token["symbol"]),
+            logo_url="https://logos.covalenthq.com/tokens/{}.png".format(
+                token["contractAddress"]
+            ),
             usd=str(int(token["balance"]) / pow(10, int(token["decimals"]))),
         )
 
