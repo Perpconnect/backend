@@ -23,7 +23,25 @@ async def tokens(chain: int, address: str) -> [TokenBalance]:
 
     all_tokens = []
 
-    if response.json()["result"] == []:
+    for token in response.json()["result"]:
+        if token["type"] != "ERC-20":
+            continue
+        balance = TokenBalance(
+            balance=token["balance"],
+            contractAddress=token["contractAddress"],
+            decimals=token["decimals"],
+            name=token["name"],
+            symbol=token["symbol"],
+            type=token["type"],
+            logo_url="https://logos.covalenthq.com/tokens/{}.png".format(
+                token["contractAddress"]
+            ),
+            usd=str(int(token["balance"]) / pow(10, int(token["decimals"]))),
+        )
+
+        all_tokens.append(balance)
+
+    if all_tokens == []:
         all_tokens.append(
             TokenBalance(
                 balance="0",
@@ -36,22 +54,4 @@ async def tokens(chain: int, address: str) -> [TokenBalance]:
                 usd="0.0",
             )
         )
-        return all_tokens
-
-    for token in response.json()["result"]:
-        if token["type"] != "ERC-20":
-            continue
-        balance = TokenBalance(
-            balance=token["balance"],
-            contractAddress=token["contractAddress"],
-            decimals=token["decimals"],
-            name=token["name"],
-            symbol=token["symbol"],
-            type=token["type"],
-            logo_url="https://cryptoicons.org/api/icon/{}/200".format(token["symbol"]),
-            usd=str(int(token["balance"]) / pow(10, int(token["decimals"]))),
-        )
-
-        all_tokens.append(balance)
-
     return all_tokens
