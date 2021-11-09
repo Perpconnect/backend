@@ -7,6 +7,7 @@ class TraderAddress(BaseModel):
 
 class Portfolio(BaseModel):
     ammAddress: str
+    symbol: str
     pairName: str
     size: float
     margin: float

@@ -2,9 +2,10 @@ import json
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
-import requests
 from web3 import Web3
 from typing import List
+import requests
+
 
 from schemas.Trader import TraderAddress, Portfolio
 from api.utils.trader import formatUnits, formatEther, SPOT_PRICE, getLiquidationPrice
@@ -44,6 +45,13 @@ def getProvider(layer, config):
 
 def getContract(address, abi, provider):
     return provider.eth.contract(address=address, abi=abi)
+
+
+def bytes_to_str(value):
+    value = value.hex().rstrip("0")
+    if len(value) % 2 != 0:
+        value = value + "0"
+    return bytes.fromhex(value).decode("utf8")
 
 
 TetherTokenArtifact = read_artifacts("TetherToken.json")
@@ -88,7 +96,7 @@ symbol = layer2Usdc.functions.symbol().call()
 ammAddressList = insuranceFund.functions.getAllAmms().call()
 
 
-def get_portfolio(trader_addr: str):
+def get_portfolio(trader_addr: str) -> List[Portfolio]:
     all_meta = []
     for addr in ammAddressList:
         pos = clearingHouseViewer.functions.getPersonalPositionWithFundingPayment(
@@ -114,7 +122,7 @@ def get_portfolio(trader_addr: str):
 
         amm = getContract(addr, AmmArtifact, layer2provider)
         priceFeedKey = amm.functions.priceFeedKey().call()
-        priceFeedKey = priceFeedKey.decode("UTF-8")
+        priceFeedKey = bytes_to_str(priceFeedKey)
 
         marginRatio = clearingHouseViewer.functions.getMarginRatio(
             addr, trader_addr
@@ -145,10 +153,10 @@ def get_portfolio(trader_addr: str):
             k=k,
         )
 
-        pairName = f"{priceFeedKey}/{symbol}"
         resp = {
             "ammAddress": addr,
-            "pairName": pairName,
+            "symbol": symbol,
+            "pairName": f"{priceFeedKey}/{symbol}",
             "size": formatEther(size),
             "margin": formatEther(margin),
             "margin_ratio": formatEther(marginRatio * 100),
