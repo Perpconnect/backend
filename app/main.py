@@ -16,6 +16,6 @@ app.add_middleware(
 
 # Declare Routers
 app.include_router(tokens.router)
-app.include_router(trader_route, prefix='/trader')
+app.include_router(trader_route, prefix="/trader")
 
 handler = Mangum(app=app)

@@ -1,7 +1,9 @@
 from pydantic import BaseModel
 
+
 class TraderAddress(BaseModel):
     address: str
+
 
 class Portfolio(BaseModel):
     ammAddress: str
