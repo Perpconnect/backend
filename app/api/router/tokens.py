@@ -1,13 +1,14 @@
 from fastapi import APIRouter, HTTPException
 import requests
 
+from typing import List
 from schemas.TokenBalance import TokenBalance
 
 router = APIRouter()
 
 
 @router.get("/tokens/{chain}/{address}")
-async def tokens(chain: int, address: str) -> [TokenBalance]:
+async def tokens(chain: int, address: str) -> List[TokenBalance]:
 
     # Error response.
     if chain == 1:
