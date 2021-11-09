@@ -1,3 +1,4 @@
+import os
 import json
 
 from fastapi import APIRouter, HTTPException
@@ -15,7 +16,7 @@ trader_route = APIRouter()
 BASE_PATH = "api/artifacts/portfolio/"
 STAGE_NAME = "production"
 ONE_ETH = 10 ** 18
-
+ETHEREUM_PROVIDER_INFURA = os.getenv("ETHEREUM_PROVIDER_INFURA")
 metadata_url = f"https://metadata.perp.exchange/{STAGE_NAME}.json"
 config_url = f"https://metadata.perp.exchange/config.{STAGE_NAME}.json"
 
@@ -30,13 +31,19 @@ def fetch_data(url: str) -> dict:
     return resp.json()
 
 
+def getLayer1Provider():
+    return Web3(Web3.WebsocketProvider(ETHEREUM_PROVIDER_INFURA))
+
+
 def getLayer2Provider(config):
     wsUrlFromConfig = config["L2_WEB3_ENDPOINTS"][0]["url"]
     if wsUrlFromConfig:
         return Web3(Web3.WebsocketProvider(wsUrlFromConfig))
 
 
-def getProvider(layer, config):
+def getProvider(layer, config=None):
+    if layer == "layer1":
+        return getLayer1Provider()
     if layer == "layer2":
         return getLayer2Provider(config)
     else:
@@ -64,8 +71,18 @@ ClearingHouseViewerArtifact = read_artifacts("ClearingHouseViewerArtifact.json")
 metadata = fetch_data(url=metadata_url)
 config = fetch_data(url=config_url)
 
+layer1provider = getProvider("layer1")
 layer2provider = getProvider("layer2", config)
 layer2Contracts = metadata["layers"]["layer2"]["contracts"]
+
+layer1_address = metadata["layers"]["layer1"]["externalContracts"]["usdc"]
+layer1_address = Web3.toChecksumAddress(layer1_address)
+
+layer1Usdc = getContract(
+    layer1_address,
+    TetherTokenArtifact,
+    layer1provider,
+)
 
 layer2Usdc = getContract(
     metadata["layers"]["layer2"]["externalContracts"]["usdc"],
@@ -196,6 +213,13 @@ def get_balance(trader: TraderAddress):
     if not trader:
         raise HTTPException(status_code=400, detail="Invalid trader address.")
 
-    raw_balance = layer2Usdc.functions.balanceOf(trader).call()
-    layer2Balance = formatUnits(balance=raw_balance, decimals=decimal)
-    return JSONResponse(content={"Layer 2": f"{layer2Balance} {symbol}"})
+    raw_layer1_balance = layer1Usdc.functions.balanceOf(trader).call()
+    raw_layer2_balance = layer2Usdc.functions.balanceOf(trader).call()
+    layer1Balance = formatUnits(balance=raw_layer1_balance, decimals=decimal)
+    layer2Balance = formatUnits(balance=raw_layer2_balance, decimals=decimal)
+    return JSONResponse(
+        content={
+            "Layer 1": f"{layer1Balance} {symbol}",
+            "Layer 2": f"{layer2Balance} {symbol}",
+        }
+    )
