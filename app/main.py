@@ -1,8 +1,9 @@
-from fastapi import FastAPI
 from mangum import Mangum
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from api.router import *
 from api.router.trader import trader_route
-from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Perp connect - partial backend", openapi_prefix="/main")
 
