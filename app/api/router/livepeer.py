@@ -38,7 +38,7 @@ HEADERS = {
     'authorization': f'Bearer {LIVEPEER_API_KEY}'
 }
 
-@livepeer_route.post("/")
+@livepeer_route.post("/create-new-stream")
 async def create_new_stream(stream: LivepeerStream):
     stream_name = stream.stream_name
     if not stream_name:
@@ -60,7 +60,7 @@ async def create_new_stream(stream: LivepeerStream):
             }
         return "Some error occured. Please try again later."
 
-@livepeer_route.get("/")
+@livepeer_route.get("/get-stream")
 async def get_stream_status(stream_id: str):
     if not stream_id:
         raise HTTPException(status_code=400, detail="No stream_id found.")
