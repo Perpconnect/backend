@@ -25,13 +25,13 @@ jobs:
         id: cache-venv
         with:
           path: venv
-          key: ${{ runner.os }}-venv-${{ hashFiles('**/requirements*.txt') }}
+#           key: ${{ runner.os }}-venv-${{ hashFiles('**/requirements*.txt') }}
           restore-keys: |
             ${{ runner.os }}-venv-
       - name: Activate and Install Depencies into Virtual env
         run: python -m venv venv && source venv/bin/activate &&
           pip3 install -r requirements.txt
-        if: steps.cache-venv.outputs.cache-hit != 'true'
+#         if: steps.cache-venv.outputs.cache-hit != 'true'
 
       # Install all the app dependencies
       - name: Install dependencies
@@ -44,7 +44,7 @@ jobs:
       - name: Create archive of dependencies
         run: |
           cd ./venv/lib/python3.9/site-packages
-          zip -r9 ../../../../../api.zip .
+          zip -r9 ../../../../api.zip .
       - name: Add API files to Zip file
         run: cd ./app && zip -g ../api.zip -r .
       - name: Upload zip file artifact
