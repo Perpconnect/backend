@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [ temp ]
 
 jobs:
   continuous-integration:
@@ -14,7 +14,7 @@ jobs:
       - name: Set up Python all python version
         uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: 3.8
           architecture: x64
 
       - name: Install Python Virtual ENV
@@ -43,7 +43,7 @@ jobs:
 
       - name: Create archive of dependencies
         run: |
-          cd ./venv/lib/python3.9/site-packages
+          cd ./venv/lib/python3.8/site-packages
           zip -r9 ../../../../api.zip .
       - name: Add API files to Zip file
         run: cd ./app && zip -g ../api.zip -r .
@@ -85,3 +85,67 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ temp ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout Repository
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      # Step 2: Setup Node
+      - name: Setup Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12'
+
+      # Step 3: Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      # Step 4a: Set Main Variables
+      - name: Set variables (main)
+        if: endsWith(github.ref, '/main')
+        run: |
+          echo "ROLE_TO_ASSUME=arn:aws:iam::661212801069:role/github-actions-deployment-role" >> $GITHUB_ENV
+          echo "STAGE=prod" >> $GITHUB_ENV
+      # Step 4b: Set Develop Variables
+      - name: Set variables (develop)
+        if: endsWith(github.ref, '/develop')
+        run: |
+          echo "ROLE_TO_ASSUME=arn:aws:iam::060703538658:role/github-actions-deployment-role" >> $GITHUB_ENV
+          echo "STAGE=dev" >> $GITHUB_ENV
+      # Step 5: Configure AWS Credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          role-external-id: ${{ secrets.AWS_ROLE_EXTERNAL_ID }}
+          role-duration-seconds: 3600
+          role-session-name: Claro_Money_Zoom_API_Deployment
+
+      # Step 6: Install Node Modules
+      - name: Install node modules
+        run: |
+          npm install -g serverless
+          npm install
+      # Step 7: Install Python Dependencies
+      - name: Install python dependencies
+        run: pip install -r requirements.txt
+
+      # Step 8: Deploy Serverless
+      - name: Deploy serverless
+        run: |
+          serverless deploy -s $STAGE
