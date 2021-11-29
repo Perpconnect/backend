@@ -8,7 +8,7 @@ from typing import List
 import requests
 
 
-from schemas.Trader import TraderAddress, Portfolio
+from schemas.Trader import TraderAddress, Portfolio, Market
 from api.utils.trader import formatUnits, formatEther, SPOT_PRICE, getLiquidationPrice
 
 trader_route = APIRouter()
@@ -223,3 +223,23 @@ def get_balance(trader: TraderAddress):
             "Layer 2": f"{layer2Balance} {symbol}",
         }
     )
+
+@trader_route.get("/market", response_model=List[Market])
+def get_market():
+    all_data = []
+    for addr in ammAddressList:
+        amm = getContract(addr, AmmArtifact, layer2provider)
+        priceFeedKey = amm.functions.priceFeedKey().call()
+        priceFeedKey = bytes_to_str(priceFeedKey)
+
+        all.append({
+            "ammAddress": addr,
+            "symbol": symbol,
+            "pairName": f"{priceFeedKey}/{symbol}",
+            "markPrice": SPOT_PRICE,
+            "indexPrice": "0",
+            "imageUrl": "sdkjbk",
+            "fundingRate": "0"
+        })
+
+    return all_data

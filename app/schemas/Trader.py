@@ -17,3 +17,12 @@ class Portfolio(BaseModel):
     open_notional: float
     PnL: float
     last_open_at_block: float
+
+class Market(BaseModel):
+    ammAddress: str
+    symbol: str
+    pairName: str
+    markPrice: str
+    indexPrice: str
+    imageUrl: str
+    fundingRate: str
