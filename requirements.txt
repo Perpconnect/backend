@@ -1,6 +1,8 @@
 mangum==0.12.0
 requests==2.24.0
 pydantic==1.8.2
+cytoolz==0.11.2
+wheel==0.37.0
 fastapi==0.70.0
 web3==5.24.0
 python-dotenv==0.19.1
