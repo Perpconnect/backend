@@ -1,5 +1,5 @@
-import os
 import json
+import datetime
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
@@ -7,19 +7,11 @@ from web3 import Web3
 from typing import List
 import requests
 
-
-from schemas.Trader import TraderAddress, Portfolio
-from api.utils.trader import formatUnits, formatEther, SPOT_PRICE, getLiquidationPrice
+from schemas.Trader import TraderAddress, Portfolio, MarketAddress
+from api.utils.trader import formatUnits, formatEther, SPOT_PRICE, getLiquidationPrice, big2BigNum, bigNum2Big
+from api.constant import BASE_PATH, ONE_ETH, ETHEREUM_PROVIDER_INFURA, METADATA_URL, CONFIG_URL
 
 trader_route = APIRouter()
-
-BASE_PATH = "api/artifacts/portfolio/"
-STAGE_NAME = "production"
-ONE_ETH = 10 ** 18
-ETHEREUM_PROVIDER_INFURA = os.getenv("ETHEREUM_PROVIDER_INFURA")
-metadata_url = f"https://metadata.perp.exchange/{STAGE_NAME}.json"
-config_url = f"https://metadata.perp.exchange/config.{STAGE_NAME}.json"
-
 
 def read_artifacts(fname: str):
     with open(BASE_PATH + fname) as f:
@@ -68,8 +60,8 @@ ClearingHouseArtifact = read_artifacts("ClearingHouseArtifact.json")
 ClearingHouseViewerArtifact = read_artifacts("ClearingHouseViewerArtifact.json")
 
 
-metadata = fetch_data(url=metadata_url)
-config = fetch_data(url=config_url)
+metadata = fetch_data(url=METADATA_URL)
+config = fetch_data(url=CONFIG_URL)
 
 layer1provider = getProvider("layer1")
 layer2provider = getProvider("layer2", config)
@@ -111,7 +103,7 @@ clearingHouseViewer = getContract(
 decimal = layer2Usdc.functions.decimals().call()
 symbol = layer2Usdc.functions.symbol().call()
 ammAddressList = insuranceFund.functions.getAllAmms().call()
-
+tokenSymbolMap = {}
 
 def get_portfolio(trader_addr: str) -> List[Portfolio]:
     all_meta = []
@@ -223,3 +215,67 @@ def get_balance(trader: TraderAddress):
             "Layer 2": f"{layer2Balance} {symbol}",
         }
     )
+
+@trader_route.post("/market")
+async def market(address: MarketAddress):
+    address = address.address
+    amm_addresses = ammAddressList # master address_list, do not change.
+    if address:
+        check_valid = Web3.toChecksumAddress(address)
+        if not check_valid:
+            raise HTTPException(status_code=400, detail="Invalid market address.")
+        amm_addresses = [address]
+    
+    results = []
+    for addr in amm_addresses:
+        amm = getContract(addr, AmmArtifact, layer2provider)
+        priceFeedKey = amm.functions.priceFeedKey().call()
+        priceFeedKey = bytes_to_str(priceFeedKey)
+        quoteAssetAddress = amm.functions.quoteAsset().call()
+
+        symbol = tokenSymbolMap.get(quoteAssetAddress)
+        if not symbol:
+            token = getContract(quoteAssetAddress, TetherTokenArtifact, layer2provider)
+            symbol = token.functions.symbol().call()
+            tokenSymbolMap[quoteAssetAddress] = symbol
+
+        marketPrice = amm.functions.getSpotPrice().call()
+        marketPrice = marketPrice[0]
+        marketPrice = formatEther(marketPrice)
+
+        indexPrice = amm.functions.getUnderlyingPrice().call()
+        indexPrice = indexPrice[0]
+        indexPrice = formatEther(indexPrice)
+
+        time_now = datetime.datetime.now()
+        durationFromSharp = time_now.minute * 60
+        twapPrice = amm.functions.getTwapPrice(durationFromSharp).call()
+        twapPrice = twapPrice[0]
+        underlyingTwapPrice = amm.functions.getUnderlyingTwapPrice(durationFromSharp).call()
+        underlyingTwapPrice = underlyingTwapPrice[0]
+        fundingPeriod = amm.functions.fundingPeriod().call()
+
+        # marketPrice = formatEther(marketPrice)
+        oneDayInSec = 60 * 60 * 24
+        marketTwapPrice = bigNum2Big(twapPrice)
+        indexTwapPrice = bigNum2Big(underlyingTwapPrice)
+
+        premium = marketTwapPrice - indexTwapPrice
+        premiumFraction = (premium * fundingPeriod) / oneDayInSec
+
+
+        final_funding_rate = premiumFraction/indexTwapPrice
+        final_funding_rate = big2BigNum(final_funding_rate)
+        final_funding_rate = formatEther(final_funding_rate) * 100
+        results.append({
+            "markPrice": str(marketPrice),
+            "fundingRate": str(final_funding_rate),
+            "indexPrice": str(indexPrice),
+            "ammAddress": addr,
+            "pairName": f'{priceFeedKey}/{symbol}',
+            "symbol": symbol
+        })
+
+    if not results:
+        raise HTTPException(status_code=400, detail="No results found.")
+    return results

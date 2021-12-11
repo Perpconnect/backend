@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-
+from typing import Optional
 
 class TraderAddress(BaseModel):
     address: str
@@ -17,3 +17,6 @@ class Portfolio(BaseModel):
     open_notional: float
     PnL: float
     last_open_at_block: float
+
+class MarketAddress(BaseModel):
+    address: Optional[str] = None
