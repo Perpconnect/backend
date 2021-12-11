@@ -30,10 +30,6 @@ jobs:
       - name: Activate and Install Depencies into Virtual env
         run: python -m venv venv && source venv/bin/activate && pip3 install -r requirements.txt
 
-      # Build the app and run tests
-      - name: Build and Run Test
-        run: . venv/bin/activate
-
       - name: Create archive of dependencies
         run: |
           cd ./venv/lib/python3.9/site-packages
