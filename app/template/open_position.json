@@ -3,8 +3,8 @@
     "action": "openPosition",
     "args": {
       "amm": "0x8d22F1a9dCe724D8c1B4c688D75f17A2fE2D32df",
-      "side": 1,
-      "quoteAssetAmount": 0.0003909,
+      "side": 0,
+      "quoteAssetAmount": 0.0003825,
       "leverage": 1,
       "baseAssetAmountLimit": 0
     }

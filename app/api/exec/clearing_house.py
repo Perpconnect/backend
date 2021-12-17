@@ -6,14 +6,29 @@ import math
 ClearingHouseArtifact = read_artifacts("ClearingHouseArtifact.json")
 
 
-def get_suggested_gas(contract, funcName, args, account):
-
+def get_suggested_gas(contract, args, wallet, layer2provider):
     print("args: ", args)
-    gasLimit = contract.functions.openPosition(
+    nonce = layer2provider.eth.get_transaction_count(wallet.address)
+    print("contract", contract)
+    tx = contract.functions.openPosition(
         args[0], args[1], args[2], args[3], args[4]
-    ).estimateGas()
-    # ['openPosition(address,uint8,tuple,tuple,tuple)'] approve_clearing_house_to_use_usdc
-    print("gasLimit: ", gasLimit)
+    ).buildTransaction(
+        {
+            "nonce": nonce,
+            "gas": 3800000,
+            "gasPrice": layer2provider.eth.gasPrice,
+        }
+    )
+    print("tx: ", tx)
+    signed_tx = layer2provider.eth.account.sign_transaction(
+            tx, private_key=wallet.key
+        )
+    print("signed_tx", signed_tx)
+    approve_tx_hash = layer2provider.eth.send_raw_transaction(
+        signed_tx.rawTransaction
+    )
+    receipt = layer2provider.eth.wait_for_transaction_receipt(approve_tx_hash)
+    print("receipt: ", receipt)
 
 
 def isApproved(user_address, clearingHouseAddr, layer2_usdc, quoteAssetAmount):
@@ -65,9 +80,8 @@ def openPosition(layer2Contracts, layer2provider, wallet, layer2_usdc, args, opt
         print(args["leverage"])
         print(args["baseAssetAmountLimit"])
 
-        options.gasLimit = get_suggested_gas(
+        get_suggested_gas(
             clearingHouse,
-            "openPosition",
             [
                 args["amm"],  # 0
                 args["side"],  # 1
@@ -75,8 +89,11 @@ def openPosition(layer2Contracts, layer2provider, wallet, layer2_usdc, args, opt
                 {"d": big2BigNum(args["leverage"])},
                 {"d": args["baseAssetAmountLimit"]},
             ],
-            wallet.address,
+            wallet,
+            layer2provider,
         )
+
+        # gasLimit:  {'value': 0, 'chainId': 100, 'nonce': 19, 'gas': 100000, 'gasPrice': 1244400000, 'to': '0x5d9593586b4B5edBd23E7Eba8d88FD8F09D83EBd', 'data': '0x893d242d0000000000000000000000008d22f1a9dce724d8c1b4c688d75f17a2fe2d32df00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000001037a9527880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'}
 
         # Found 1 function(s) with the name `openPosition`: ['openPosition(address,uint8,tuple,tuple,tuple)']
 
