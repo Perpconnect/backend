@@ -2,6 +2,7 @@ from api.utils.contract import get_contract, read_artifacts, bytes_to_str
 from api.utils.trader import big2BigNum
 import math
 
+
 ClearingHouseArtifact = read_artifacts("ClearingHouseArtifact.json")
 
 
@@ -16,8 +17,11 @@ def get_suggested_gas(contract, funcName, args, account):
 
 
 def isApproved(user_address, amm_addr, layer2_usdc, quoteAssetAmount):
-    value = layer2_usdc.functions.allowance(amm_addr, user_address).call()
-    return value > quoteAssetAmount
+    value = layer2_usdc.functions.allowance(
+        user_address, "0x5d9593586b4B5edBd23E7Eba8d88FD8F09D83EBd"
+    ).call()
+    print("value:", value)
+    return False
 
 
 def openPosition(layer2Contracts, layer2provider, wallet, layer2_usdc, args, options):
@@ -27,22 +31,27 @@ def openPosition(layer2Contracts, layer2provider, wallet, layer2_usdc, args, opt
     if not isApproved(wallet.address, ammAddresses, layer2_usdc, quoteAssetAmount):
         nonce = layer2provider.eth.get_transaction_count(wallet.address)
 
+        print("nonce", nonce)
+
         estimate = layer2_usdc.functions.approve(
             layer2Contracts["ClearingHouse"]["address"], 2 ** 256 - 1
         ).estimateGas()
+
+        print("estimate", estimate)
 
         tx = layer2_usdc.functions.approve(
             layer2Contracts["ClearingHouse"]["address"], 2 ** 256 - 1
         ).buildTransaction(
             {
                 "nonce": nonce,
-                "gas": 70000,
-                "gasPrice": math.ceil(estimate * 1.1),
+                "gas": estimate,
+                "gasPrice": layer2provider.eth.gasPrice,
             }
         )
         signed_tx = layer2provider.eth.account.sign_transaction(
             tx, private_key=wallet.key
         )
+        print("signed_tx", signed_tx)
         approve_tx_hash = layer2provider.eth.send_raw_transaction(
             signed_tx.rawTransaction
         )
