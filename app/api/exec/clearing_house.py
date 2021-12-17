@@ -16,23 +16,17 @@ def get_suggested_gas(contract, funcName, args, account):
     print("gasLimit: ", gasLimit)
 
 
-def isApproved(user_address, amm_addr, layer2_usdc, quoteAssetAmount):
-    value = layer2_usdc.functions.allowance(
-        user_address, "0x5d9593586b4B5edBd23E7Eba8d88FD8F09D83EBd"
-    ).call()
-    print("value:", value)
-    return False
+def isApproved(user_address, clearingHouseAddr, layer2_usdc, quoteAssetAmount):
+    value = layer2_usdc.functions.allowance(user_address, clearingHouseAddr).call()
+    return value > quoteAssetAmount
 
 
 def openPosition(layer2Contracts, layer2provider, wallet, layer2_usdc, args, options):
     quoteAssetAmount = big2BigNum(args["quoteAssetAmount"])
-    ammAddresses = "0x8d22F1a9dCe724D8c1B4c688D75f17A2fE2D32df"
-    print("wallet.address", wallet.address)
-    if not isApproved(wallet.address, ammAddresses, layer2_usdc, quoteAssetAmount):
+    clearingHouseAddr = "0x5d9593586b4B5edBd23E7Eba8d88FD8F09D83EBd"
+    if not isApproved(wallet.address, clearingHouseAddr, layer2_usdc, quoteAssetAmount):
         nonce = layer2provider.eth.get_transaction_count(wallet.address)
-
         print("nonce", nonce)
-
         estimate = layer2_usdc.functions.approve(
             layer2Contracts["ClearingHouse"]["address"], 2 ** 256 - 1
         ).estimateGas()
@@ -79,7 +73,7 @@ def openPosition(layer2Contracts, layer2provider, wallet, layer2_usdc, args, opt
                 args["side"],  # 1
                 {"d": big2BigNum(args["quoteAssetAmount"])},
                 {"d": big2BigNum(args["leverage"])},
-                {"d": big2BigNum(args["baseAssetAmountLimit"])},
+                {"d": args["baseAssetAmountLimit"]},
             ],
             wallet.address,
         )

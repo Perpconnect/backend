@@ -2,9 +2,9 @@
   {
     "action": "openPosition",
     "args": {
-      "amm": "0xF75C8c9EADBCA5D26dA43466aD5Be511Cb281668",
+      "amm": "0x8d22F1a9dCe724D8c1B4c688D75f17A2fE2D32df",
       "side": 1,
-      "quoteAssetAmount": 0.0021707,
+      "quoteAssetAmount": 0.0003909,
       "leverage": 1,
       "baseAssetAmountLimit": 0
     }
